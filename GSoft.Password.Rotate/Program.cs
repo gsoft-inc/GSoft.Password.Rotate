@@ -1,24 +1,44 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using GSoft.Password.Rotate;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Templates;
+using Serilog.Templates.Themes;
 
-using System.Text.Json;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
-using GSoft.Password.Rotate;
-using Microsoft.Graph;
+// Setup Host
+await Host.CreateDefaultBuilder()
+    .ConfigureLogging(HostConfiguration.Logging)
+    .ConfigureServices(HostConfiguration.Services)
+    .ConfigureAppConfiguration(HostConfiguration.AppConfiguration)
+    .RunConsoleAsync();
 
-var graphClient = new GraphServiceClient(new AzureCliCredential());
-var azureAdHttpClient = new AzureAdHttpClient(graphClient);
-var appId = Guid.Parse("SubscriptionId");
-var secretName = RandomSecretName.RandomString(10);
-var result = await azureAdHttpClient.SetSecret(appId, secretName);
-var keyvaultClient = new SecretClient(new Uri("https://keyvaultUri.vault.azure.net"), new AzureCliCredential());
+internal static class HostConfiguration
+{
+    public static void AppConfiguration(IConfigurationBuilder builder)
+    {
+        builder.AddJsonFile("appsettings.json");
+    }
 
+    public static void Logging(ILoggingBuilder builder)
+    {
+        builder.ClearProviders();
 
-var idList = await AppQueries.RetrieveList(graphClient);
+        var logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console(new ExpressionTemplate(
+                "[{@t:HH:mm:ss} {@l:u3} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}] {@m}\n{@x}",
+                theme: TemplateTheme.Literate))
+            .CreateLogger();
 
+        Log.Logger = logger;
 
+        builder.AddSerilog(logger, true);
+    }
 
-keyvaultClient.SetSecret(secretName, keyvaultClient.ToString());
-
-Console.WriteLine(string.Join(", ", idList));
-Console.WriteLine(JsonSerializer.Serialize(result));
+    public static void Services(IServiceCollection services)
+    {
+        services.AddHostedService<JobRunner>();
+    }
+}
