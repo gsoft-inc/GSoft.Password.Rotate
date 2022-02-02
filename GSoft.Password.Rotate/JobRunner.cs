@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 
 namespace GSoft.Password.Rotate;
@@ -10,11 +12,13 @@ namespace GSoft.Password.Rotate;
 public class JobRunner : BackgroundService
 {
     private readonly ILogger<JobRunner> _logger;
+    private readonly IConfiguration _configuration;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
-    public JobRunner(ILogger<JobRunner> logger, IHostApplicationLifetime hostApplicationLifetime)
+    public JobRunner(ILogger<JobRunner> logger, IConfiguration configuration, IHostApplicationLifetime hostApplicationLifetime)
     {
         this._logger = logger;
+        this._configuration = configuration;
         this._hostApplicationLifetime = hostApplicationLifetime;
     }
 
@@ -22,6 +26,8 @@ public class JobRunner : BackgroundService
     {
         try
         {
+            var options = this._configuration.GetSection(SecretSourceOptions.SectionName).Get<SecretSourceOptions>();
+
             var graphClient = new GraphServiceClient(new AzureCliCredential());
             var azureAdHttpClient = new AzureAdHttpClient(graphClient);
             var appId = Guid.Parse("SubscriptionId");

@@ -39,6 +39,8 @@ internal static class HostConfiguration
 
     public static void Services(IServiceCollection services)
     {
-        services.AddHostedService<JobRunner>();
+        services
+            .AddHostedService<JobRunner>()
+            .AddOptions<SecretSourceOptions>();
     }
 }
