@@ -18,7 +18,10 @@ internal static class HostConfiguration
 {
     public static void AppConfiguration(IConfigurationBuilder builder)
     {
-        builder.AddJsonFile("appsettings.json");
+        builder
+            .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables();
+
     }
 
     public static void Logging(ILoggingBuilder builder)
@@ -41,6 +44,6 @@ internal static class HostConfiguration
     {
         services
             .AddHostedService<JobRunner>()
-            .AddOptions<SecretSourceOptions>();
+            .AddOptions<SecretRotationEntryOptions>();
     }
 }

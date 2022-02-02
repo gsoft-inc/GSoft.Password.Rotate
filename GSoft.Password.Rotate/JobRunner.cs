@@ -26,7 +26,7 @@ public class JobRunner : BackgroundService
     {
         try
         {
-            var options = this._configuration.GetSection(SecretSourceOptions.SectionName).Get<SecretSourceOptions>();
+            var options = this._configuration.GetSection("SecretRotations").Get<SecretRotationEntryOptions[]>();
 
             var graphClient = new GraphServiceClient(new AzureCliCredential());
             var azureAdHttpClient = new AzureAdHttpClient(graphClient);
