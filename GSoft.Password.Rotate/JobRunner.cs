@@ -32,12 +32,17 @@ public class JobRunner : BackgroundService
 
             foreach (var (app, sink) in rotationOptions)
             {
-                var secret = await azureAdHttpClient.CreateSecret(app.ObjectId);
-                var keyVaultClient = new SecretClient(sink.KeyVaultUri, new AzureCliCredential());
+                if (!string.IsNullOrEmpty(sink.SecretName))
+                {
+                    var secret = await azureAdHttpClient.CreateSecret(app.ObjectId);
+                    var keyVaultClient = new SecretClient(sink.KeyVaultUri, new AzureCliCredential());
 
-                await keyVaultClient.SetSecretAsync(sink.SecretName, secret.SecretText, stoppingToken);
+                    await keyVaultClient.SetSecretAsync(sink.SecretName, secret.SecretText, stoppingToken);
 
-                this._logger.LogInformation("Password set secret result {SetSecretResult}",JsonSerializer.Serialize(secret));
+                    this._logger.LogInformation("Password set secret result {SetSecretResult}",JsonSerializer.Serialize(secret));
+                }
+
+                await azureAdHttpClient.UpdateApplication(app.ObjectId);
             }
         }
         finally
