@@ -1,17 +1,23 @@
 namespace GSoft.Password.Rotate;
 public class SecretRotationEntryOptions
 {
-    public SecretRotationEntrySourceOptions Source { get; set; }
+    public AzureAdAppOptions AzureAdApp { get; set; }
 
-    public SecretRotationEntryDestinationOptions Destination { get; set; }
+    public KeyVaultSecretOptions Sink { get; set; }
+
+    public void Deconstruct(out AzureAdAppOptions app, out KeyVaultSecretOptions sink)
+    {
+        app = AzureAdApp;
+        sink = Sink;
+    }
 }
 
-public class SecretRotationEntrySourceOptions
+public class AzureAdAppOptions
 {
-    public Guid AppId { get; set; }
+    public Guid ObjectId { get; set; }
 }
 
-public class SecretRotationEntryDestinationOptions
+public class KeyVaultSecretOptions
 {
     public Uri KeyVaultUri { get; set; }
 

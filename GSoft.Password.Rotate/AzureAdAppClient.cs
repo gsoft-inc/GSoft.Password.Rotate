@@ -2,26 +2,25 @@ using Microsoft.Graph;
 
 namespace GSoft.Password.Rotate;
 
-public class AzureAdHttpClient
+public class AzureAdAppClient
 {
     private readonly GraphServiceClient _graphServiceClient;
 
-    public AzureAdHttpClient(GraphServiceClient graphServiceClient)
+    public AzureAdAppClient(GraphServiceClient graphServiceClient)
     {
         _graphServiceClient = graphServiceClient;
     }
 
-    public async Task<PasswordCredential> SetSecret(Guid appId, string secretName)
+    public Task<PasswordCredential> CreateSecret(Guid objectId)
     {
-        var application = _graphServiceClient.Applications[appId.ToString()];
+        var application = _graphServiceClient.Applications[objectId.ToString()];
         var request = application.AddPassword(new PasswordCredential()
         {
-            DisplayName = secretName,
             StartDateTime = DateTimeOffset.UtcNow,
             EndDateTime = DateTimeOffset.UtcNow.AddMonths(1)
              
         }).Request();
-        var response = await request.PostAsync();
-        return response;
+
+        return request.PostAsync();
     }
 }

@@ -4,7 +4,6 @@ using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 
 namespace GSoft.Password.Rotate;
@@ -26,22 +25,20 @@ public class JobRunner : BackgroundService
     {
         try
         {
-            var options = this._configuration.GetSection("SecretRotations").Get<SecretRotationEntryOptions[]>();
+            var rotationOptions = this._configuration.GetSection("SecretRotations").Get<SecretRotationEntryOptions[]>();
 
             var graphClient = new GraphServiceClient(new AzureCliCredential());
-            var azureAdHttpClient = new AzureAdHttpClient(graphClient);
-            var appId = Guid.Parse("SubscriptionId");
-            var secretName = RandomSecretName.RandomString(10);
-            var result = await azureAdHttpClient.SetSecret(appId, secretName);
-            var keyVaultClient = new SecretClient(new Uri("https://keyvaultUri.vault.azure.net"), new AzureCliCredential());
+            var azureAdHttpClient = new AzureAdAppClient(graphClient);
 
-            var idList = await AppQueries.RetrieveList(graphClient);
+            foreach (var (app, sink) in rotationOptions)
+            {
+                var secret = await azureAdHttpClient.CreateSecret(app.ObjectId);
+                var keyVaultClient = new SecretClient(sink.KeyVaultUri, new AzureCliCredential());
 
-            await keyVaultClient.SetSecretAsync(secretName, keyVaultClient.ToString(), stoppingToken);
+                await keyVaultClient.SetSecretAsync(sink.SecretName, secret.SecretText, stoppingToken);
 
-            this._logger.LogInformation("App IDs: '{AppIds}'",string.Join(", ", idList));
-            this._logger.LogInformation("Password set secret result {SetSecretResult}",JsonSerializer.Serialize(result));
-
+                this._logger.LogInformation("Password set secret result {SetSecretResult}",JsonSerializer.Serialize(secret));
+            }
         }
         finally
         {

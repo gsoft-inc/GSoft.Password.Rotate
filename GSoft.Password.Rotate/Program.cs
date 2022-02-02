@@ -42,8 +42,6 @@ internal static class HostConfiguration
 
     public static void Services(IServiceCollection services)
     {
-        services
-            .AddHostedService<JobRunner>()
-            .AddOptions<SecretRotationEntryOptions>();
+        services.AddHostedService<JobRunner>();
     }
 }
